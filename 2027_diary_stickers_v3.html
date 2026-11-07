@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>2027 주간 학습 다이어리</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: #f3f5fa;
+      color: #222;
+    }
+
+    header {
+      padding: 22px;
+      background: #4f6df5;
+      color: white;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      font-size: 15px;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 30% 70%;
+      gap: 18px;
+      padding: 20px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    /* 왼쪽 7일 카드 */
+    .left-area {
+      display: grid;
+      gap: 10px;
+    }
+
+    .day-card {
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-left: 6px solid #4f6df5;
+    }
+
+    .day-card h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .day-card input,
+    .day-card textarea {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .day-card input {
+      margin-bottom: 8px;
+    }
+
+    .day-card textarea {
+      height: 55px;
+      resize: none;
+    }
+
+    /* 오른쪽 영역 */
+    .right-area {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .section h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      color: #27304f;
+    }
+
+    .guide {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    /* 주간 시간표 */
+    .schedule-table {
+      width: 100%;
+      table-layout: fixed;
+
+      /* 바깥선은 실선 */
+      border: 2px solid #8f9bd8;
+
+      /* 내부 선을 따로 제어하기 위해 separate 사용 */
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+      height: 52px;
+      padding: 7px;
+      font-size: 13px;
+      text-align: center;
+      vertical-align: top;
+
+      /* 내부선은 점선 */
+      border-right: 1px dashed #aab2df;
+      border-bottom: 1px dashed #aab2df;
+    }
+
+    /* 맨 오른쪽은 바깥 테두리와 겹치지 않게 내부선 제거 */
+    .schedule-table th:last-child,
+    .schedule-table td:last-child {
+      border-right: none;
+    }
+
+    /* 맨 아래도 바깥 테두리와 겹치지 않게 내부선 제거 */
+    .schedule-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .schedule-table th {
+      background: #eef1ff;
+      font-weight: bold;
+      vertical-align: middle;
+    }
+
+    .schedule-table th:first-child {
+      width: 115px;
+    }
+
+    .time-cell {
+      background: #f7f8ff;
+      font-weight: bold;
+      vertical-align: middle !important;
+    }
+
+    .write-cell {
+      background: #ffffff;
+      cursor: text;
+      text-align: left !important;
+      line-height: 1.4;
+    }
+
+    .write-cell:focus {
+      outline: 2px solid #4f6df5;
+      background: #f9fbff;
+    }
+
+    /* 아래 체크리스트 + 모눈 메모 */
+    .bottom-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .check-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .check-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    .check-item input[type="text"] {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #ccc;
+      padding: 7px;
+      font-size: 14px;
+    }
+
+    .check-item input[type="text"]:focus {
+      outline: none;
+      border-bottom: 2px solid #4f6df5;
+    }
+
+    /* 모눈종이 메모 공간 */
+    .grid-memo {
+      width: 100%;
+      height: 360px;
+      min-height: 360px;
+      padding: 12px;
+      border: 1px solid #ccd3ee;
+      border-radius: 10px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 28px;
+
+      background-color: white;
+      background-image:
+        linear-gradient(#e1e5f5 1px, transparent 1px),
+        linear-gradient(90deg, #e1e5f5 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-area {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 세 가지 스티커 분류 및 연동 */
+    .sticker-guide { display: flex; flex-wrap: wrap; gap: 9px 16px; margin: 8px 0 14px; font-size: 13px; color: #45506c; }
+    .sticker-guide span { white-space: nowrap; }
+    .write-cell { padding: 4px !important; text-align: left !important; vertical-align: top; }
+    .cell-inner { display: flex; flex-direction: column; gap: 3px; min-height: 48px; }
+    .cell-toolbar { display: flex; align-items: center; justify-content: flex-end; height: 24px; }
+    .sticker-choice { width: 32px; height: 24px; padding: 0; border: 1px solid #d9def1; border-radius: 7px; background: #f7f8fc; color: #7e8699; font-size: 14px; cursor: pointer; appearance: auto; }
+    .sticker-choice:focus-visible { outline: 2px solid #4f6df5; }
+    .sticker-choice.red { background: #ffe9e9; border-color: #e89595; }
+    .sticker-choice.blue { background: #e7efff; border-color: #9dbaf5; }
+    .sticker-choice.green { background: #e5f7e9; border-color: #95d1a4; }
+    .schedule-entry { display: block; width: 100%; min-height: 44px; resize: vertical; background: transparent; border: 0; outline: none; font: inherit; font-size: 13px; line-height: 1.45; padding: 3px; color: inherit; }
+    .schedule-entry:focus { background: #f9fbff; outline: 1px solid #b3beff; border-radius: 4px; }
+    /* 수동 입력과 스티커 연동 내용이 하나의 '주요 일정' 칸 안에 보이도록 */
+    .main-event-field { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; }
+    .day-card .main-event-field textarea { display: block; border: 0; border-radius: 0; margin: 0; min-height: 55px; height: 55px; resize: vertical; }
+    .day-card .main-event-field textarea:focus { outline: 2px solid #4f6df5; outline-offset: -2px; }
+    .linked-list { display: flex; flex-direction: column; gap: 5px; padding: 0 7px 7px; }
+    .linked-list:empty { display: none; }
+    .main-event-field:has(.linked-entry) textarea { border-bottom: 1px dashed #d9dff2; }
+    .linked-list .linked-entry { margin-top: 5px; }
+    .linked-entry { padding: 5px 7px; background: #f8f9fe; border-radius: 7px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.45; }
+    .linked-time { color: #697287; font-size: 11px; margin-right: 5px; }
+    /* 시간 칸을 두 개의 독립 일정/스티커 영역으로 구분 */
+    .cell-inner { gap: 5px; }
+    .schedule-slot { border: 1px solid #e0e5f3; border-radius: 7px; padding: 4px; background: #fff; min-width: 0; }
+    .schedule-slot + .schedule-slot { border-top: 1px solid #b5c0ea; }
+    .schedule-slot .cell-toolbar { justify-content: space-between; height: 25px; }
+    .slot-number { font-size: 11px; color: #7b86a2; padding-left: 2px; }
+    .schedule-slot .schedule-entry { min-height: 39px; }
+    .save-note { font-size: 12px; color: #68738d; margin: 9px 0 0; }
+    @media (max-width: 700px) { .schedule-table { min-width: 680px; } .schedule-scroll { overflow-x: auto; } .schedule-table th:first-child { width: 90px; } }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>2027 주간 학습 다이어리</h1>
+    <p>2시간 단위 주간 시간표와 모눈 메모 공간</p>
+  </header>
+
+  <main class="page">
+
+    <!-- 왼쪽: 요일별 카드 -->
+    <section class="left-area">
+
+      <div class="day-card">
+        <h2>월요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 1일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+      <div class="day-card">
+        <h2>화요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 2일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+      <div class="day-card">
+        <h2>수요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 3일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+      <div class="day-card">
+        <h2>목요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 4일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+      <div class="day-card">
+        <h2>금요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 5일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+      <div class="day-card">
+        <h2>토요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 6일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+      <div class="day-card">
+        <h2>일요일</h2>
+        <input type="text" placeholder="날짜 예: 3월 7일">
+        <textarea placeholder="주요 일정"></textarea>
+      </div>
+
+    </section>
+
+    <!-- 오른쪽 -->
+    <section class="right-area">
+
+      <!-- 주간 시간표 -->
+      <div class="section">
+        <h2>주간 시간표</h2>
+        <p class="guide">
+          시간은 2시간 단위입니다. 시간 칸마다 두 개의 일정과 스티커를 각각 입력할 수 있습니다. 스티커를 붙인 일정만 왼쪽 주요 일정 칸 안에 자동 표시됩니다.
+        </p>
+
+        <div class="sticker-guide" aria-label="스티커 종류"><span>🔴 아이 학교 관련</span><span>🔵 엄마 개인 일정</span><span>🟢 가족 행사</span><span>스티커 없음 = 연동하지 않음</span></div>
+        <div class="schedule-scroll"><table class="schedule-table">
+          <tr>
+            <th>시간</th>
+            <th>월</th>
+            <th>화</th>
+            <th>수</th>
+            <th>목</th>
+            <th>금</th>
+            <th>토</th>
+            <th>일</th>
+          </tr>
+
+          <tr>
+            <td class="time-cell">06:00 - 08:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">08:00 - 10:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">10:00 - 12:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">12:00 - 14:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">14:00 - 16:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">16:00 - 18:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">18:00 - 20:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">20:00 - 22:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+
+          <tr>
+            <td class="time-cell">22:00 - 24:00</td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+            <td class="write-cell"></td>
+          </tr>
+        </table></div>
+        <p class="save-note">입력한 내용과 스티커 선택은 이 브라우저에 자동 저장됩니다.</p>
+      </div>
+
+      <!-- 아래 영역 -->
+      <div class="bottom-area">
+        <div class="section">
+          <h2>이번 주 체크리스트</h2>
+          <p class="guide">해야 할 일을 적고 완료하면 체크하세요.</p>
+          <div class="check-list">
+            <label class="check-item"><input type="checkbox"><input type="text" placeholder="할 일 1"></label>
+            <label class="check-item"><input type="checkbox"><input type="text" placeholder="할 일 2"></label>
+            <label class="check-item"><input type="checkbox"><input type="text" placeholder="할 일 3"></label>
+            <label class="check-item"><input type="checkbox"><input type="text" placeholder="할 일 4"></label>
+            <label class="check-item"><input type="checkbox"><input type="text" placeholder="할 일 5"></label>
+          </div>
+        </div>
+        <div class="section">
+          <h2>자유 메모</h2>
+          <p class="guide">모눈 공간에 이번 주 목표, 준비물, 생각 등을 자유롭게 적으세요.</p>
+          <textarea class="grid-memo" aria-label="자유 메모"></textarea>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+  (() => {
+    'use strict';
+    // 기존 버전과 같은 키를 사용하며, 단일 일정 데이터를 2칸 구조로 자동 승계합니다.
+    const STORAGE_KEY = '2027-weekly-diary-v1';
+    const days = [...document.querySelectorAll('.day-card')];
+    const cells = [...document.querySelectorAll('.schedule-table td.write-cell')];
+    const rows = [...document.querySelectorAll('.schedule-table tr')].slice(1);
+    const SLOT_COUNT = 2;
+    const SLOT_TOTAL = cells.length * SLOT_COUNT;
+    const initial = { dates: Array(7).fill(''), dayNotes: Array(7).fill(''), schedule: Array(SLOT_TOTAL).fill(''), stickers: Array(SLOT_TOTAL).fill(''), tasks: Array(5).fill(''), checked: Array(5).fill(false), memo: '' };
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { saved = {}; }
+    const data = { ...initial, ...saved };
+    const safeArray = (v, length) => Array.from({length}, (_, i) => Array.isArray(v) ? (v[i] ?? '') : '');
+    data.dates = safeArray(data.dates, 7);
+    data.dayNotes = safeArray(data.dayNotes, 7);
+    data.tasks = safeArray(data.tasks, 5);
+    data.checked = safeArray(data.checked, 5).map(Boolean);
+    // 이전 파일: 63칸(시간별 한 일정). 새로운 파일: 126칸(시간별 두 일정).
+    // 첫 번째 일정으로 옮기고 두 번째는 비워 기존 데이터를 잃지 않도록 합니다.
+    const hasOldSlots = Array.isArray(saved.schedule) && saved.schedule.length === cells.length;
+    const migrateSlots = arr => {
+      if (!hasOldSlots) return safeArray(arr, SLOT_TOTAL);
+      return Array.from({length:SLOT_TOTAL}, (_, i) => i % SLOT_COUNT === 0 ? (arr?.[i / SLOT_COUNT] ?? '') : '');
+    };
+    data.schedule = migrateSlots(saved.schedule);
+    data.stickers = migrateSlots(saved.stickers);
+    data.memo = typeof data.memo === 'string' ? data.memo : '';
+    const persist = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) { /* 저장이 제한된 브라우저 */ } };
+    const stickerOptions = [['', '◯ 없음'], ['red', '🔴 학교'], ['blue', '🔵 개인'], ['green', '🟢 가족']];
+    const stickerEmoji = {red:'🔴', blue:'🔵', green:'🟢'};
+    const weekNames = ['월','화','수','목','금','토','일'];
+
+    function updateLeft() {
+      days.forEach((card, dayIndex) => {
+        let list = card.querySelector('.linked-list');
+        if (!list) {
+          list = document.createElement('div');
+          list.className = 'linked-list';
+          list.setAttribute('aria-label', '스티커로 연동된 일정');
+          card.querySelector('.main-event-field').append(list);
+        }
+        list.replaceChildren();
+        rows.forEach((row, rowIndex) => {
+          const time = row.querySelector('.time-cell')?.textContent.trim() || '';
+          for (let slot=0; slot<SLOT_COUNT; slot++) {
+            const index = (rowIndex * 7 + dayIndex) * SLOT_COUNT + slot;
+            const color = data.stickers[index];
+            const content = (data.schedule[index] || '').trim();
+            if (!stickerEmoji[color] || !content) continue;
+            const item = document.createElement('div');
+            item.className = 'linked-entry';
+            const timeLabel = document.createElement('span');
+            timeLabel.className = 'linked-time';
+            timeLabel.textContent = time;
+            const label = document.createElement('span');
+            label.textContent = stickerEmoji[color] + ' ' + content;
+            item.append(timeLabel, label);
+            list.append(item);
+          }
+        });
+      });
+    }
+
+    days.forEach((card, i) => {
+      const date = card.querySelector('input');
+      const note = card.querySelector('textarea');
+      const field = document.createElement('div');
+      field.className = 'main-event-field';
+      note.parentNode.insertBefore(field, note);
+      field.append(note);
+      date.value = data.dates[i];
+      note.value = data.dayNotes[i];
+      date.addEventListener('input', () => {data.dates[i]=date.value; persist();});
+      note.addEventListener('input', () => {data.dayNotes[i]=note.value; persist();});
+    });
+
+    cells.forEach((cell, cellIndex) => {
+      const inner = document.createElement('div');
+      inner.className = 'cell-inner';
+      for (let slot=0; slot<SLOT_COUNT; slot++) {
+        const index = cellIndex * SLOT_COUNT + slot;
+        const zone = document.createElement('div');
+        zone.className = 'schedule-slot';
+        const toolbar = document.createElement('div');
+        toolbar.className = 'cell-toolbar';
+        const number = document.createElement('span');
+        number.className = 'slot-number';
+        number.textContent = `일정 ${slot+1}`;
+        const select = document.createElement('select');
+        select.className = 'sticker-choice';
+        select.setAttribute('aria-label', `${weekNames[cellIndex%7]}요일 ${Math.floor(cellIndex/7)+1}번째 시간대 일정 ${slot+1} 스티커`);
+        select.title = '스티커 선택 (없음 / 학교 / 개인 / 가족)';
+        stickerOptions.forEach(([value,label]) => {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = label;
+          select.append(option);
+        });
+        select.value = data.stickers[index] || '';
+        const paint = () => {
+          select.classList.remove('red','blue','green');
+          if (select.value) select.classList.add(select.value);
+        };
+        paint();
+        select.addEventListener('change', () => {
+          data.stickers[index] = select.value;
+          paint(); persist(); updateLeft();
+        });
+        const entry = document.createElement('textarea');
+        entry.className = 'schedule-entry';
+        entry.rows = 2;
+        entry.placeholder = '일정 입력';
+        entry.setAttribute('aria-label', `${weekNames[cellIndex%7]}요일 시간표 일정 ${slot+1}`);
+        entry.value = data.schedule[index] || '';
+        entry.addEventListener('input', () => {
+          data.schedule[index] = entry.value;
+          persist(); updateLeft();
+        });
+        toolbar.append(number, select);
+        zone.append(toolbar, entry);
+        inner.append(zone);
+      }
+      cell.append(inner);
+    });
+    document.querySelectorAll('.check-item').forEach((item,i) => {
+      const check = item.querySelector('[type="checkbox"]');
+      const input = item.querySelector('[type="text"]');
+      check.checked = data.checked[i];
+      input.value = data.tasks[i];
+      check.addEventListener('change', () => {data.checked[i]=check.checked;persist();});
+      input.addEventListener('input', () => {data.tasks[i]=input.value;persist();});
+    });
+    const memo = document.querySelector('.grid-memo');
+    memo.value = data.memo;
+    memo.addEventListener('input', () => {data.memo=memo.value;persist();});
+    updateLeft();
+    if (hasOldSlots) persist();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2027 주간 학습 다이어리</title>
+    <style>
+        /* 기본 스타일 설정 */
+        :root {
+            --primary-border: #d1d5db;
+            --secondary-border: #e5e7eb;
+            --bg-light: #f9fafb;
+            --text-dark: #1f2937;
+        }
+        * { box-sizing: border-box; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; }
+        body { margin: 0; padding: 20px; background-color: #ffffff; color: var(--text-dark); line-height: 1.5; }
+        
+        .layout-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* 왼쪽: 요일별 주요 일정 카드 (약 30%) */
+        .left-panel {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 320px;
+        }
+        .day-card {
+            border: 1px solid var(--primary-border);
+            border-radius: 6px;
+            padding: 12px;
+            background-color: var(--bg-light);
+        }
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        .day-header input[type="date"] {
+            border: 1px solid var(--primary-border);
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 0.85em;
+        }
+        .main-note {
+            width: 100%;
+            height: 60px;
+            resize: vertical;
+            border: 1px dashed #a1a1aa;
+            border-radius: 4px;
+            padding: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        .synced-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .synced-item {
+            background-color: #ffffff;
+            border: 1px solid var(--secondary-border);
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .synced-item .time-label {
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        /* 오른쪽: 시간표, 체크리스트, 메모 (약 70%) */
+        .right-panel {
+            flex: 7;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0; /* flex 버그 방지 */
+        }
+
+        /* 시간표 */
+        .timetable-section {
+            border: 1px solid var(--primary-border);
+            border-radius: 6px;
+            overflow-x: auto;
+            background-color: #ffffff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+        th, td {
+            border: 1px dashed var(--primary-border);
+            padding: 6px;
+            text-align: center;
+            vertical-align: top;
+        }
+        th {
+            background-color: var(--bg-light);
+            border: 1px solid var(--primary-border);
+            padding: 10px;
+            position: sticky;
+            top: 0;
+        }
+        td:first-child {
+            font-weight: bold;
+            background-color: var(--bg-light);
+            border: 1px solid var(--primary-border);
+            vertical-align: middle;
+        }
+        table { border: 1px solid var(--primary-border); }
+        
+        .schedule-slot {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .schedule-slot:last-child {
+            margin-bottom: 0;
+        }
+        .sticker-select {
+            width: 48px;
+            border: 1px solid var(--primary-border);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .schedule-input {
+            flex: 1;
+            min-width: 60px;
+            border: 1px solid var(--primary-border);
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 0.85em;
+        }
+
+        /* 하단: 체크리스트 & 메모 */
+        .bottom-widgets {
+            display: flex;
+            gap: 20px;
+            height: 280px;
+        }
+        .checklist-section {
+            flex: 1;
+            border: 1px solid var(--primary-border);
+            border-radius: 6px;
+            background-color: var(--bg-light);
+            display: flex;
+            flex-direction: column;
+        }
+        .section-title {
+            font-weight: bold;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--primary-border);
+            background-color: var(--secondary-border);
+            margin: 0;
+            border-radius: 6px 6px 0 0;
+        }
+        .checklist-items {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .check-item input[type="text"] {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid var(--primary-border);
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .memo-section {
+            flex: 1;
+            border: 1px solid var(--primary-border);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+        .memo-textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            resize: none;
+            padding: 10px 15px;
+            line-height: 24px;
+            font-size: 0.95em;
+            /* 모눈종이 배경 구현 */
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, #f0f0f0 1px, transparent 1px), 
+                linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+            border-radius: 0 0 6px 6px;
+        }
+        .memo-textarea:focus { outline: none; }
+
+        /* 좁은 화면 대응 */
+        @media (max-width: 1024px) {
+            .layout-container { flex-direction: column; }
+            .bottom-widgets { flex-direction: column; height: auto; }
+            .memo-section { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout-container">
+    <!-- 왼쪽: 요일별 주요 일정 카드 -->
+    <div class="left-panel" id="left-panel">
+        <!-- JS로 자동 생성됨 -->
+    </div>
+
+    <!-- 오른쪽: 시간표 및 하단 위젯 -->
+    <div class="right-panel">
+        <!-- 주간 시간표 -->
+        <div class="timetable-section">
+            <table id="timetable">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">시간대</th>
+                        <th>월</th><th>화</th><th>수</th><th>목</th>
+                        <th>금</th><th>토</th><th style="color:red;">일</th>
+                    </tr>
+                </thead>
+                <tbody id="timetable-body">
+                    <!-- JS로 자동 생성됨 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 하단: 체크리스트 & 자유 메모 -->
+        <div class="bottom-widgets">
+            <div class="checklist-section">
+                <h4 class="section-title">이번 주 체크리스트</h4>
+                <div class="checklist-items" id="checklist">
+                    <!-- JS로 자동 생성됨 -->
+                </div>
+            </div>
+            
+            <div class="memo-section">
+                <h4 class="section-title">자유 메모</h4>
+                <textarea class="memo-textarea" id="free-memo" placeholder="학습 목표, 시험 범위, 준비물 등을 자유롭게 적어보세요."></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const days = ['월', '화', '수', '목', '금', '토', '일'];
+    const timeSlots = [
+        '06:00–08:00', '08:00–10:00', '10:00–12:00', 
+        '12:00–14:00', '14:00–16:00', '16:00–18:00', 
+        '18:00–20:00', '20:00–22:00', '22:00–24:00'
+    ];
+    const stickers = [
+        { value: '', label: '◯' },
+        { value: '🔴', label: '🔴' },
+        { value: '🔵', label: '🔵' },
+        { value: '🟢', label: '🟢' }
+    ];
+
+    // 1. 화면 요소 렌더링 함수
+    function renderLeftCards() {
+        const panel = document.getElementById('left-panel');
+        days.forEach((day, index) => {
+            const isSunday = day === '일' ? 'color:red;' : '';
+            panel.innerHTML += `
+                <div class="day-card" data-day-index="${index}">
+                    <div class="day-header" style="${isSunday}">
+                        ${day}요일
+                        <input type="date" class="date-input" id="date-${index}">
+                    </div>
+                    <textarea class="main-note" id="main-note-${index}" placeholder="직접 쓰는 주요 일정 및 메모"></textarea>
+                    <div class="synced-container" id="synced-${index}"></div>
+                </div>
+            `;
+        });
+    }
+
+    function renderTimetable() {
+        const tbody = document.getElementById('timetable-body');
+        const stickerOptions = stickers.map(s => `<option value="${s.value}">${s.label}</option>`).join('');
+
+        timeSlots.forEach((time, tIndex) => {
+            let rowHtml = `<tr><td>${time}</td>`;
+            days.forEach((day, dIndex) => {
+                rowHtml += `
+                    <td data-day="${dIndex}" data-time="${time}">
+                        <!-- 일정 1 -->
+                        <div class="schedule-slot">
+                            <select class="sticker-select" id="sticker-${dIndex}-${tIndex}-1">${stickerOptions}</select>
+                            <input type="text" class="schedule-input" id="schedule-${dIndex}-${tIndex}-1" placeholder="일정 1">
+                        </div>
+                        <!-- 일정 2 -->
+                        <div class="schedule-slot">
+                            <select class="sticker-select" id="sticker-${dIndex}-${tIndex}-2">${stickerOptions}</select>
+                            <input type="text" class="schedule-input" id="schedule-${dIndex}-${tIndex}-2" placeholder="일정 2">
+                        </div>
+                    </td>
+                `;
+            });
+            rowHtml += `</tr>`;
+            tbody.innerHTML += rowHtml;
+        });
+    }
+
+    function renderChecklist() {
+        const container = document.getElementById('checklist');
+        for(let i=0; i<5; i++) {
+            container.innerHTML += `
+                <div class="check-item">
+                    <input type="checkbox" id="check-box-${i}">
+                    <input type="text" id="check-text-${i}" placeholder="할 일을 입력하세요">
+                </div>
+            `;
+        }
+    }
+
+    // 2. 동기화 및 저장 로직
+    function updateSyncedSchedules() {
+        // 기존 동기화 영역 초기화
+        for(let i=0; i<7; i++) {
+            document.getElementById(`synced-${i}`).innerHTML = '';
+        }
+
+        // 시간표 순회하며 스티커가 있는 항목 연동
+        timeSlots.forEach((time, tIndex) => {
+            days.forEach((day, dIndex) => {
+                for(let s=1; s<=2; s++) {
+                    const stickerVal = document.getElementById(`sticker-${dIndex}-${tIndex}-${s}`).value;
+                    const textVal = document.getElementById(`schedule-${dIndex}-${tIndex}-${s}`).value.trim();
+                    
+                    if (stickerVal !== '' && textVal !== '') {
+                        const syncedContainer = document.getElementById(`synced-${dIndex}`);
+                        syncedContainer.innerHTML += `
+                            <div class="synced-item">
+                                <span class="time-label">${time}</span>
+                                <span>${stickerVal}</span>
+                                <span>${textVal}</span>
+                            </div>
+                        `;
+                    }
+                }
+            });
+        });
+    }
+
+    function saveToLocalStorage() {
+        const data = {
+            dates: [], mainNotes: [], timetable: {}, checklist: [], memo: ''
+        };
+
+        // 왼쪽 카드 데이터 저장
+        for(let i=0; i<7; i++) {
+            data.dates.push(document.getElementById(`date-${i}`).value);
+            data.mainNotes.push(document.getElementById(`main-note-${i}`).value);
+        }
+
+        // 시간표 데이터 저장
+        days.forEach((day, dIndex) => {
+            data.timetable[dIndex] = {};
+            timeSlots.forEach((time, tIndex) => {
+                data.timetable[dIndex][tIndex] = {
+                    s1: {
+                        sticker: document.getElementById(`sticker-${dIndex}-${tIndex}-1`).value,
+                        text: document.getElementById(`schedule-${dIndex}-${tIndex}-1`).value
+                    },
+                    s2: {
+                        sticker: document.getElementById(`sticker-${dIndex}-${tIndex}-2`).value,
+                        text: document.getElementById(`schedule-${dIndex}-${tIndex}-2`).value
+                    }
+                };
+            });
+        });
+
+        // 체크리스트 저장
+        for(let i=0; i<5; i++) {
+            data.checklist.push({
+                checked: document.getElementById(`check-box-${i}`).checked,
+                text: document.getElementById(`check-text-${i}`).value
+            });
+        }
+
+        // 자유 메모 저장
+        data.memo = document.getElementById('free-memo').value;
+
+        localStorage.setItem('diary2027_data', JSON.stringify(data));
+    }
+
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem('diary2027_data');
+        if (!saved) return;
+
+        try {
+            const data = JSON.parse(saved);
+
+            // 왼쪽 카드 데이터 복원
+            for(let i=0; i<7; i++) {
+                if(data.dates && data.dates[i]) document.getElementById(`date-${i}`).value = data.dates[i];
+                if(data.mainNotes && data.mainNotes[i]) document.getElementById(`main-note-${i}`).value = data.mainNotes[i];
+            }
+
+            // 시간표 데이터 복원 (기존 1칸 구조 호환성 고려)
+            if (data.timetable) {
+                days.forEach((day, dIndex) => {
+                    if(!data.timetable[dIndex]) return;
+                    timeSlots.forEach((time, tIndex) => {
+                        const cellData = data.timetable[dIndex][tIndex];
+                        if(!cellData) return;
+
+                        // 새로운 s1, s2 구조
+                        if(cellData.s1) {
+                            document.getElementById(`sticker-${dIndex}-${tIndex}-1`).value = cellData.s1.sticker || '';
+                            document.getElementById(`schedule-${dIndex}-${tIndex}-1`).value = cellData.s1.text || '';
+                        }
+                        if(cellData.s2) {
+                            document.getElementById(`sticker-${dIndex}-${tIndex}-2`).value = cellData.s2.sticker || '';
+                            document.getElementById(`schedule-${dIndex}-${tIndex}-2`).value = cellData.s2.text || '';
+                        }
+                        // 구버전(1칸) 호환성 승계 로직
+                        if(cellData.sticker !== undefined && !cellData.s1) {
+                            document.getElementById(`sticker-${dIndex}-${tIndex}-1`).value = cellData.sticker || '';
+                            document.getElementById(`schedule-${dIndex}-${tIndex}-1`).value = cellData.text || '';
+                        }
+                    });
+                });
+            }
+
+            // 체크리스트 복원
+            if(data.checklist) {
+                for(let i=0; i<5; i++) {
+                    if(data.checklist[i]) {
+                        document.getElementById(`check-box-${i}`).checked = data.checklist[i].checked;
+                        document.getElementById(`check-text-${i}`).value = data.checklist[i].text;
+                    }
+                }
+            }
+
+            // 메모 복원
+            if(data.memo) {
+                document.getElementById('free-memo').value = data.memo;
+            }
+
+        } catch (e) {
+            console.error("데이터 불러오기 실패:", e);
+        }
+    }
+
+    // 3. 초기화 및 이벤트 리스너 등록
+    window.addEventListener('DOMContentLoaded', () => {
+        renderLeftCards();
+        renderTimetable();
+        renderChecklist();
+        
+        loadFromLocalStorage();
+        updateSyncedSchedules(); // 초기 동기화 렌더링
+
+        // 모든 입력 변화에 대해 즉시 저장 및 동기화 업데이트
+        document.body.addEventListener('input', (e) => {
+            saveToLocalStorage();
+            if (e.target.classList.contains('sticker-select') || e.target.classList.contains('schedule-input')) {
+                updateSyncedSchedules();
+            }
+        });
+        
+        document.body.addEventListener('change', (e) => {
+            saveToLocalStorage();
+            if (e.target.classList.contains('sticker-select') || e.target.classList.contains('schedule-input')) {
+                updateSyncedSchedules();
+            }
+        });
+    });
+</script>
+</body>
+</html>
