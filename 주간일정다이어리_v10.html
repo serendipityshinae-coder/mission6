@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>주간 일정 다이어리</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-2: #f1efea;
+    --line: #dedad2;
+    --line-soft: #ebe8e1;
+    --text: #23211d;
+    --muted: #77726a;
+    --accent: #3d5a80;
+    --accent-soft: #e4ebf3;
+    --danger: #b3412f;
+    --sat: #2f62b8;
+    --sun: #c0392b;
+    --cat-personal: #3d6fb6;
+    --cat-personal-bg: #e3ecf8;
+    --cat-son: #2e8b57;
+    --cat-son-bg: #e0f2e7;
+    --cat-family: #d0742a;
+    --cat-family-bg: #fbeadb;
+    --radius: 10px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1a18;
+      --surface: #252421;
+      --surface-2: #2e2c29;
+      --line: #3d3a35;
+      --line-soft: #33312d;
+      --text: #ece9e3;
+      --muted: #a29d94;
+      --accent: #8fb0d8;
+      --accent-soft: #2c3a4b;
+      --danger: #e2826f;
+      --sat: #7fa6e8;
+      --sun: #ec8a7e;
+      --cat-personal: #8fb3ea;
+      --cat-personal-bg: #2a3647;
+      --cat-son: #7fcf9f;
+      --cat-son-bg: #253a2e;
+      --cat-family: #efa86a;
+      --cat-family-bg: #44321f;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* ---------- 상단 ---------- */
+  header.top {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+    gap: 12px; margin-bottom: 20px;
+  }
+  header.top h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.02em; }
+  header.top .range { margin: 2px 0 0; color: var(--muted); font-size: 1rem; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+  .dot.personal { background: var(--cat-personal); }
+  .dot.son { background: var(--cat-son); }
+  .dot.family { background: var(--cat-family); }
+
+  section.panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 24px;
+  }
+  section.panel > h2 { margin: 0 0 4px; font-size: 1.15rem; }
+  .panel-desc { margin: 0 0 12px; color: var(--muted); font-size: 0.85rem; }
+  .notice {
+    background: #fff3cd; color: #6b5200; border-radius: 8px; padding: 8px 12px;
+    margin-bottom: 16px; font-size: 0.9rem;
+  }
+
+  /* ---------- 주간 시간표 ---------- */
+  .tt-scroll { max-height: min(50vh, 320px); overflow: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 8px; }
+  table.tt { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+  table.tt th, table.tt td { border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+  table.tt tr > *:last-child { border-right: 0; }
+  table.tt tbody tr:last-child > * { border-bottom: 0; }
+  table.tt col.c-time { width: 56px; }
+  table.tt thead th {
+    background: var(--surface-2); padding: 6px 4px; font-weight: 600; text-align: center;
+    border-bottom: 1px solid var(--line);
+  }
+  table.tt thead th .dow { display: block; font-size: 0.95rem; }
+  table.tt thead th .dt { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+  table.tt thead th.sat .dow { color: var(--sat); }
+  table.tt thead th.sun .dow { color: var(--sun); }
+  table.tt th.time {
+    background: var(--surface-2); color: var(--muted); font-size: 0.78rem; font-weight: 500;
+    text-align: center; vertical-align: top; padding: 6px 2px;
+    position: sticky; left: 0; z-index: 1;
+  }
+  table.tt thead { position: sticky; top: 0; z-index: 2; }
+  table.tt thead th.time { z-index: 1; }
+  table.tt tr.allday > * { border-bottom: 2px solid var(--line); background-color: var(--surface); }
+  table.tt tr.allday th.time { background: var(--surface-2); color: var(--text); font-weight: 600; vertical-align: middle; }
+  td.slot {
+    position: relative; height: 44px; padding: 0; vertical-align: top; cursor: pointer;
+    transition: background-color .12s;
+  }
+  td.slot:hover, td.slot:focus-visible { background: var(--accent-soft); outline: none; }
+  .slot-events { position: absolute; inset: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: 1px; }
+  td.slot.drop-target { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .chip.drag-preview { position: fixed; z-index: 10; pointer-events: none; opacity: .85; }
+  .slot-more { position: absolute; right: 2px; bottom: 2px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 0 3px; cursor: pointer; font-size: .72rem; }
+  .chip {
+    display: block; width: 100%; text-align: left; border: 0; cursor: grab; min-height: 0; touch-action: none;
+    border-left: 3px solid var(--cat-personal); background: var(--cat-personal-bg);
+    border-radius: 4px; padding: 0 5px; margin: 0; font-size: 0.78rem; line-height: 1.45;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chip.son { border-left-color: var(--cat-son); background: var(--cat-son-bg); }
+  .chip.family { border-left-color: var(--cat-family); background: var(--cat-family-bg); }
+  .chip .min { font-weight: 700; margin-right: 3px; }
+  .chip:hover { filter: brightness(0.96); }
+  .scroll-hint { display: none; color: var(--muted); font-size: 0.82rem; margin: 0 0 8px; }
+
+  /* ---------- 요일별 일정 ---------- */
+  .days { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .day { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--surface); min-width: 0; }
+  .day-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .day-head h3 { margin: 0; font-size: 1rem; }
+  .day-head h3.sat { color: var(--sat); }
+  .day-head h3.sun { color: var(--sun); }
+  .day-head .count { color: var(--muted); font-size: 0.8rem; font-weight: 500; margin-left: 6px; }
+  .empty { color: var(--muted); font-size: 0.85rem; margin: 4px 0; }
+  ul.evlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  li.ev { border-left: 3px solid var(--cat-personal); background: var(--surface-2); border-radius: 6px; padding: 8px 10px; }
+  li.ev.son { border-left-color: var(--cat-son); }
+  li.ev.family { border-left-color: var(--cat-family); }
+  li.ev.editing { border-left-color: var(--accent); background: var(--accent-soft); }
+  .ev-top { display: flex; gap: 8px; align-items: baseline; }
+  .ev-time { font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
+  .ev-time.allday { font-weight: 600; font-size: 0.8rem; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+  .ev-title { font-weight: 600; word-break: break-word; }
+  .ev-cat { font-size: 0.75rem; color: var(--muted); margin-left: auto; flex: none; }
+  .ev-memo { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; font-size: 0.88rem; color: var(--text); }
+  .ev-memo::before { content: "메모 · "; color: var(--muted); }
+  .ev-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
+
+  /* ---------- 버튼 & 폼 ---------- */
+  .btn {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; font-size: 0.85rem; min-height: 32px;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { color: var(--danger); }
+  .btn.danger.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn.small { padding: 2px 8px; min-height: 28px; font-size: 0.8rem; }
+
+  form.evform { display: grid; gap: 8px; }
+  form.evform label { display: grid; gap: 3px; font-size: 0.8rem; color: var(--muted); }
+  form.evform .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  form.evform .row > label { flex: 1 1 130px; }
+  form.evform label.check { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; color: var(--text); font-size: 0.88rem; padding-bottom: 6px; }
+  input[type=text], input[type=time], select, textarea {
+    width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+    background: var(--surface); min-height: 36px;
+  }
+  input:disabled { opacity: .45; }
+  textarea { resize: vertical; min-height: 60px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .form-err { color: var(--danger); font-size: 0.82rem; min-height: 0; margin: 0; }
+  .form-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  .form-actions .spacer { flex: 1; }
+
+  dialog {
+    border: 1px solid var(--line); border-radius: 12px; padding: 18px; width: min(440px, calc(100vw - 32px));
+    background: var(--surface); color: var(--text); box-shadow: 0 12px 40px rgba(0,0,0,.2);
+  }
+  dialog::backdrop { background: rgba(20, 18, 15, .4); }
+  dialog h3 { margin: 0 0 12px; font-size: 1.05rem; }
+
+  /* ---------- 해야 할 일 ---------- */
+  form.todo-add { display: flex; gap: 8px; margin-bottom: 12px; }
+  form.todo-add input { flex: 1; }
+  ul.todos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  li.todo {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    background: var(--surface-2); border-radius: 6px;
+  }
+  li.todo input[type=checkbox] { width: 20px; height: 20px; flex: none; accent-color: var(--accent); cursor: pointer; }
+  li.todo .todo-text { flex: 1; word-break: break-word; }
+  li.todo.done .todo-text { text-decoration: line-through; color: var(--muted); }
+  li.todo .todo-edit { flex: 1; }
+  li.todo .acts { display: flex; gap: 6px; flex: none; }
+  .todo-summary { color: var(--muted); font-size: 0.82rem; margin: 10px 0 0; }
+
+  .dashboard-head, .week-nav, .deadline-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .dashboard-head h2 { margin: 0; flex: 1; font-size: 1.15rem; }
+  .week-nav { margin: 8px 0; }
+  .week-nav input { width: auto; }
+  .deadline-row { justify-content: space-between; }
+  .deadline-row span { flex: 1; overflow-wrap: anywhere; }
+  .deadline-list { list-style: none; padding: 0; display: grid; gap: 6px; }
+  .deadline-row { padding: 6px 8px; background: var(--surface-2); border-radius: 6px; }
+  .time-picker { display: grid; gap: 4px; flex: 1 1 210px; min-width: 0; }
+  .time-picker > span { color: var(--muted); font-size: .8rem; }
+  .time-picker-panel { padding: 8px; border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 8px; }
+  .time-picker-panel[hidden] { display: none; }
+  .time-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .time-parts select { min-width: 0; padding-inline: 4px; }
+  .time-picker .form-actions { justify-content: flex-start; }
+  .deadline-cues { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+  .deadline-cues[hidden], .deadline-calendar-row[hidden] { display: none; }
+  .deadline-cell { vertical-align: top; padding: 3px; }
+  .day > .deadline-cues { margin-bottom: 8px; }
+  .deadline-cue { background: var(--accent-soft); padding: 3px 5px; border-radius: 4px; font-size: .78rem; overflow-wrap: anywhere; }
+  .deadline-cue strong { color: var(--accent); white-space: nowrap; }
+  .notice-link { color: var(--accent); overflow-wrap: anywhere; }
+  .academic-fields { display: grid; gap: 8px; }
+  .academic-fields[hidden], .makeup-fields[hidden] { display: none; }
+  input[type=date], input[type=url] { max-width: 100%; }
+
+  @media (max-width: 760px) {
+    table.tt { min-width: 720px; }
+    .scroll-hint { display: block; }
+    header.top h1 { font-size: 1.35rem; }
+    section.panel { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>주간 일정 다이어리</h1>
+      <p class="range" id="range"></p>
+    </div>
+    <div class="legend" aria-label="분류">
+      <span><i class="dot personal"></i>개인</span>
+      <span><i class="dot son"></i>아들</span>
+      <span><i class="dot family"></i>가족</span>
+    </div>
+  </header>
+
+  <div class="notice" id="storageNotice" hidden>이 브라우저에서는 저장 공간을 사용할 수 없어, 창을 닫으면 기록이 사라질 수 있습니다.</div>
+
+  <section class="panel" aria-labelledby="h-deadline">
+    <div class="dashboard-head"><h2 id="h-deadline">다가오는 마감</h2></div>
+    <ul class="deadline-list" id="activeDeadlines"></ul>
+    <details>
+      <summary>마감 추가 · 관리</summary>
+      <form class="evform" id="deadlineForm">
+        <label>마감 제목 <input type="text" name="title" maxlength="100" required></label>
+        <div class="row">
+          <label>마감일 <input type="date" name="date" required></label>
+          <label>표시 시작 <select name="lead"><option value="7">7일 전</option><option value="14">14일 전</option></select></label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" id="cancelDeadline" hidden>취소</button>
+          <button type="submit" class="btn primary">마감 저장</button>
+        </div>
+      </form>
+      <ul class="deadline-list" id="allDeadlines"></ul>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="h-today">
+    <div class="dashboard-head">
+      <h2 id="h-today">오늘 일정</h2>
+      <button class="btn" type="button" id="addToday">+ 오늘 일정</button>
+      <button class="btn" type="button" id="toggleWeek" aria-expanded="false" aria-controls="weekPanels">주간 시간표 열기</button>
+    </div>
+    <p class="panel-desc" id="todayDate"></p>
+    <ul class="evlist" id="todayEvents"></ul>
+  </section>
+
+  <div id="weekPanels" hidden>
+  <section class="panel" aria-labelledby="h-tt">
+    <h2 id="h-tt">주간 시간표</h2>
+    <div class="week-nav">
+      <button class="btn" type="button" id="prevWeek">이전 주</button>
+      <button class="btn" type="button" id="thisWeek">이번 주</button>
+      <button class="btn" type="button" id="nextWeek">다음 주</button>
+      <label>날짜 이동 <input type="date" id="jumpWeek"></label>
+    </div>
+    <p class="panel-desc" id="weekRange"></p>
+    <p class="panel-desc">빈 칸을 누르면 그 날짜·시간으로 일정을 기록합니다. 일정을 누르면 수정하고, 끌어서 다른 칸에 옮길 수 있습니다.</p>
+    <p class="form-err" id="moveStatus" role="status"></p>
+    <p class="scroll-hint">표 안에서 좌우로 요일을, 위아래로 시간대를 확인하세요.</p>
+    <div class="tt-scroll">
+      <table class="tt" id="tt"></table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-days">
+    <h2 id="h-days">요일별 일정</h2>
+    <p class="panel-desc">일정의 날짜·시간·제목·메모를 수정하거나 삭제하고, 새 일정을 추가합니다.</p>
+    <div class="days" id="days"></div>
+  </section>
+
+  </div>
+
+  <section class="panel" aria-labelledby="h-todo">
+    <h2 id="h-todo">해야 할 일</h2>
+    <p class="panel-desc">기억해 둘 일을 적어 두는 목록입니다. 시간표와 요일별 일정에는 나타나지 않습니다.</p>
+    <form class="todo-add" id="todoAdd">
+      <input type="text" id="todoInput" placeholder="예) 시댁 식사 예약하기" maxlength="200" aria-label="해야 할 일 입력">
+      <button class="btn primary" type="submit">추가</button>
+    </form>
+    <ul class="todos" id="todos"></ul>
+    <p class="todo-summary" id="todoSummary"></p>
+  </section>
+</div>
+
+<dialog id="dlg"><div id="dlgBody"></div></dialog>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ===== 주간 설정 ===== */
+  var DOW = ['월', '화', '수', '목', '금', '토', '일'];
+  function localIso(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function todayIso() { return localIso(new Date()); }
+  function shiftDate(iso, days) {
+    var d = new Date(iso + 'T12:00:00');
+    d.setDate(d.getDate() + days);
+    return localIso(d);
+  }
+  function validDate(iso) {
+    return typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso) &&
+      shiftDate(iso, 0) === iso;
+  }
+  function weekOf(iso) {
+    var weekday = new Date(iso + 'T12:00:00').getDay();
+    var monday = shiftDate(iso, -(weekday + 6) % 7);
+    return DOW.map(function (dow, i) {
+      var date = shiftDate(monday, i);
+      return { iso: date, dow: dow, label: Number(date.slice(5, 7)) + '월 ' + Number(date.slice(8)) + '일',
+        cls: i === 5 ? 'sat' : (i === 6 ? 'sun' : '') };
+    });
+  }
+  var WEEK = weekOf(todayIso());
+  var CATS = { personal: '개인', son: '아들', family: '가족' };
+  var KEY = 'weekly-diary:2027-01-04';
+
+  /* ===== 상태 & 저장 ===== */
+  var state = load();
+  var ui = { editingId: null, addingDate: null, todoEditingId: null };
+
+  function load() {
+    var empty = { events: [], todos: [], deadlines: [] };
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return empty;
+      var data = JSON.parse(raw);
+      return {
+        events: Array.isArray(data.events) ? data.events.filter(validEvent) : [],
+        deadlines: Array.isArray(data.deadlines) ? data.deadlines.filter(function (d) {
+          return d && typeof d.title === 'string' && validDate(d.date) && (d.lead === 7 || d.lead === 14);
+        }) : [],
+        todos: Array.isArray(data.todos) ? data.todos.filter(function (t) { return t && typeof t.text === 'string'; }) : []
+      };
+    } catch (e) {
+      return empty;
+    }
+  }
+  function validEvent(e) {
+    return e && typeof e.title === 'string' && validDate(e.date);
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      document.getElementById('storageNotice').hidden = true;
+    } catch (e) {
+      document.getElementById('storageNotice').hidden = false;
+    }
+  }
+  try { localStorage.getItem(KEY); } catch (e) { document.getElementById('storageNotice').hidden = false; }
+
+  /* ===== 유틸 ===== */
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (v == null || v === false) return;
+        if (k === 'class') el.className = v;
+        else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+        else if (k === 'checked' || k === 'value' || k === 'disabled' || k === 'selected') el[k] = v;
+        else el.setAttribute(k, v === true ? '' : v);
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) append(el, arguments[i]);
+    return el;
+  }
+  function append(el, c) {
+    if (c == null || c === false) return;
+    if (Array.isArray(c)) { c.forEach(function (x) { append(el, x); }); return; }
+    el.append(c instanceof Node ? c : String(c));
+  }
+  function dayOf(iso) { return weekOf(iso).find(function (d) { return d.iso === iso; }); }
+  function sortEvents(list) {
+    return list.slice().sort(function (a, b) {
+      var ta = a.time || '', tb = b.time || '';
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      return (a.created || 0) - (b.created || 0);
+    });
+  }
+  function eventsOn(iso) { return sortEvents(state.events.filter(function (e) { return e.date === iso; })); }
+  function catOf(e) { return CATS[e.cat] ? e.cat : 'personal'; }
+
+  /* 2단계 삭제 버튼: 첫 클릭은 확인 상태, 두 번째 클릭에 삭제 */
+  function deleteButton(label, onConfirm, small) {
+    var timer = null;
+    var btn = h('button', { type: 'button', class: 'btn danger' + (small ? ' small' : '') }, label);
+    btn.addEventListener('click', function () {
+      if (btn.classList.contains('armed')) { clearTimeout(timer); onConfirm(); return; }
+      btn.classList.add('armed');
+      btn.textContent = '한 번 더 눌러 삭제';
+      timer = setTimeout(function () { btn.classList.remove('armed'); btn.textContent = label; }, 3000);
+    });
+    return btn;
+  }
+
+  /* ===== 일정 입력 폼 (시간표 창과 요일별 일정에서 공용) ===== */
+  function timePicker(label, initial, allowClear) {
+    var value = initial;
+    var opener = h('button', { type: 'button', class: 'btn', 'aria-expanded': 'false' });
+    var periods = ['오전', '오후'];
+    var hours = Array.from({ length: 12 }, function (_, i) { return pad(i + 1); });
+    var minutes = ['00', '10', '20', '30', '40', '50'];
+    function select(options) {
+      return h('select', null, options.map(function (option) {
+        return h('option', { value: option }, option);
+      }));
+    }
+    var period = select(periods);
+    var hour = select(hours);
+    var minute = select(minutes);
+    var prompt = h('option', { value: '', disabled: true }, '선택');
+    minute.prepend(prompt);
+    var hint = h('p', { class: 'form-err', role: 'status' });
+    var panel = h('div', { class: 'time-picker-panel', hidden: true },
+      h('div', { class: 'time-parts' },
+        h('label', null, '오전·오후', period),
+        h('label', null, '시', hour),
+        h('label', null, '분', minute)),
+      hint,
+      h('div', { class: 'form-actions' },
+        h('button', { type: 'button', class: 'btn small primary', onclick: function () {
+          if (!minute.value) { hint.textContent = '분을 선택해 주세요.'; minute.focus(); return; }
+          value = pad(Number(hour.value) % 12 + (period.value === '오후' ? 12 : 0)) + ':' + minute.value;
+          close(true);
+        } }, '시간 적용'),
+        h('button', { type: 'button', class: 'btn small', onclick: function () { close(true); } }, '취소'),
+        allowClear ? h('button', { type: 'button', class: 'btn small', onclick: function () {
+          value = ''; close(true);
+        } }, '시간 지우기') : null));
+    function updateLabel() {
+      var hr = Number(value.slice(0, 2));
+      opener.textContent = value ? periods[hr >= 12 ? 1 : 0] + ' ' + pad(hr % 12 || 12) + ':' + value.slice(3) : '시간 선택';
+      opener.setAttribute('aria-label', label + ' ' + opener.textContent);
+    }
+    function close(focus) {
+      panel.hidden = true;
+      opener.setAttribute('aria-expanded', 'false');
+      updateLabel();
+      if (focus) opener.focus();
+    }
+    function open() {
+      var time = value || '09:00';
+      var hr = Number(time.slice(0, 2));
+      period.value = periods[hr >= 12 ? 1 : 0];
+      hour.value = pad(hr % 12 || 12);
+      minute.value = minutes.includes(time.slice(3)) ? time.slice(3) : '';
+      hint.textContent = minute.value ? '' : '기존 시각을 변경하려면 10분 단위로 분을 선택해 주세요.';
+      panel.hidden = false;
+      opener.setAttribute('aria-expanded', 'true');
+      period.focus();
+    }
+    opener.addEventListener('click', function () { if (panel.hidden) open(); else close(false); });
+    updateLabel();
+    return {
+      element: h('div', { class: 'time-picker' }, h('span', null, label), opener, panel),
+      get value() { return value; },
+      get pending() { return !panel.hidden; },
+      setEnabled: function (enabled) {
+        opener.disabled = !enabled;
+        if (!enabled) close(false);
+        else if (!value && !allowClear) { value = '09:00'; updateLabel(); }
+      },
+      focus: function () { if (panel.hidden) opener.focus(); else period.focus(); }
+    };
+  }
+
+  function eventForm(ev, opts) {
+    var allDay = !ev.time;
+    var dateSel = opts.fixedDate ? null : h('input', { type: 'date', name: 'date', value: ev.date });
+    var timeIn = timePicker('시작 시각', ev.time || (opts.fixedDate ? '09:00' : ''), false);
+    timeIn.setEnabled(!allDay);
+    var allDayChk = h('input', { type: 'checkbox', name: 'allday', checked: allDay, disabled: !!ev.parentId });
+    allDayChk.addEventListener('change', function () {
+      timeIn.setEnabled(!allDayChk.checked);
+      if (!allDayChk.checked) timeIn.focus();
+    });
+    var titleIn = h('input', { type: 'text', name: 'title', maxlength: 100, value: ev.title || '', placeholder: '예) 정원이 치과', autocomplete: 'off' });
+    var titleLabel = h('label', null, '제목 (필수)', titleIn);
+    var memoIn = h('textarea', { name: 'memo', rows: 2, maxlength: 2000 });
+    memoIn.value = ev.memo || '';
+    var catSel = h('select', { name: 'cat' },
+      Object.keys(CATS).map(function (k) { return h('option', { value: k, selected: k === catOf(ev) }, CATS[k]); }));
+    var linked = state.events.find(function (item) { return item.parentId && item.parentId === ev.id; });
+    var sourceIn = h('input', { type: 'url', name: 'source', maxlength: 2000, value: ev.source || '' });
+    var absentIn = h('input', { type: 'checkbox', name: 'absent', checked: !!ev.absent });
+    var makeupDate = h('input', { type: 'date', name: 'makeupDate', value: linked ? linked.date : '' });
+    var makeupTime = timePicker('보강 시간', linked && linked.time ? linked.time : '', true);
+    var makeupFields = h('div', { class: 'makeup-fields', hidden: !ev.absent },
+      h('div', { class: 'row' }, h('label', null, '보강 날짜', makeupDate), makeupTime.element),
+      h('p', { class: 'panel-desc' }, linked ? '보강 날짜와 시간을 지우거나 결석을 해제하면 연결된 보강 일정도 삭제됩니다.' : '비워 두면 보강 미정으로 표시됩니다.'));
+    var academicFields = h('div', { class: 'academic-fields', hidden: catSel.value !== 'son' },
+      h('label', null, '학교·학원 공지 링크 (선택)', sourceIn),
+      ev.parentId ? h('p', { class: 'panel-desc' }, '연결된 보강 일정입니다.') :
+        h('label', { class: 'check' }, absentIn, '결석'),
+      ev.parentId ? null : makeupFields);
+    if (ev.parentId) catSel.disabled = true;
+    catSel.addEventListener('change', function () { academicFields.hidden = catSel.value !== 'son'; });
+    absentIn.addEventListener('change', function () { makeupFields.hidden = !absentIn.checked; });
+    var err = h('p', { class: 'form-err', role: 'alert' });
+
+    var form = h('form', { class: 'evform', novalidate: true },
+      opts.fixedDate ? titleLabel : null,
+      h('div', { class: 'row' },
+        dateSel ? h('label', null, '날짜', dateSel) : null,
+        timeIn.element,
+        h('label', { class: 'check' }, allDayChk, '종일')
+      ),
+      opts.fixedDate ? null : titleLabel,
+      h('label', null, '상세 메모', memoIn),
+      h('label', null, '분류', catSel),
+      academicFields,
+      err,
+      h('div', { class: 'form-actions' },
+        opts.onDelete ? deleteButton('삭제', opts.onDelete) : null,
+        h('span', { class: 'spacer' }),
+        h('button', { type: 'button', class: 'btn', onclick: opts.onCancel }, '취소'),
+        h('button', { type: 'submit', class: 'btn primary' }, '저장')
+      )
+    );
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = titleIn.value.trim();
+      if (!title) { err.textContent = '제목을 입력해 주세요.'; titleIn.focus(); return; }
+      var time = null;
+      if (!allDayChk.checked) {
+        if (timeIn.pending) { err.textContent = '시작 시각에서 시간 적용 또는 취소를 눌러 주세요.'; timeIn.focus(); return; }
+        if (!/^\d{2}:\d{2}$/.test(timeIn.value)) { err.textContent = '시작 시각을 입력하거나 종일을 선택해 주세요.'; timeIn.focus(); return; }
+        time = timeIn.value;
+      }
+      var date = dateSel ? dateSel.value : ev.date;
+      if (!validDate(date)) { err.textContent = '일정 날짜를 입력해 주세요.'; return; }
+      var bucket = timeBucket(time);
+      if ((!ev.id || date !== ev.date || bucket !== timeBucket(ev.time)) && slotIsFull(date, bucket)) {
+        err.textContent = '한 칸에 일정은 두 개까지 넣을 수 있습니다.';
+        return;
+      }
+      var source = catSel.value === 'son' ? sourceIn.value.trim() : '';
+      if (source && !safeLink(source)) { err.textContent = '공지 링크는 http 또는 https 주소로 입력해 주세요.'; return; }
+      var absent = catSel.value === 'son' && !ev.parentId && absentIn.checked;
+      var makeup = null;
+      if (absent && makeupTime.pending) {
+        err.textContent = '보강 시간에서 시간 적용 또는 취소를 눌러 주세요.'; makeupTime.focus(); return;
+      }
+      if (absent && (makeupDate.value || makeupTime.value)) {
+        if (!validDate(makeupDate.value) || !makeupTime.value) {
+          err.textContent = '보강 날짜와 시간을 모두 입력해 주세요.'; return;
+        }
+        makeup = { date: makeupDate.value, time: makeupTime.value };
+        var makeupBucket = timeBucket(makeup.time);
+        var sameSlot = date === makeup.date && bucket === makeupBucket;
+        var otherCount = state.events.filter(function (item) {
+          return item.id !== ev.id && (!linked || item.id !== linked.id) &&
+            item.date === makeup.date && timeBucket(item.time) === makeupBucket;
+        }).length;
+        var unchangedMakeup = linked && linked.date === makeup.date && timeBucket(linked.time) === makeupBucket;
+        var unchangedOriginal = !sameSlot || (ev.date === date && timeBucket(ev.time) === bucket);
+        if (otherCount + (sameSlot ? 1 : 0) >= 2 && !(unchangedMakeup && unchangedOriginal)) {
+          err.textContent = '보강 시간 칸에 일정이 두 개 있습니다.'; return;
+        }
+      }
+      opts.onSave({ date: date, time: time, title: title, memo: memoIn.value.trim(),
+        cat: catSel.value, source: source, absent: absent }, makeup);
+    });
+    form._focus = function () { titleIn.focus(); };
+    return form;
+  }
+
+  function safeLink(value) {
+    try {
+      var url = new URL(value);
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+    } catch (e) { return ''; }
+  }
+  function saveEvent(data, existingId, makeup) {
+    var ev = existingId ? state.events.find(function (item) { return item.id === existingId; }) : null;
+    if (ev) Object.assign(ev, data);
+    else {
+      ev = Object.assign({ id: uid(), created: Date.now() }, data);
+      state.events.push(ev);
+    }
+    if (!ev.parentId) {
+      var child = state.events.find(function (item) { return item.parentId === ev.id; });
+      if (makeup) {
+        var linkedData = { date: makeup.date, time: makeup.time, title: ev.title, cat: 'son' };
+        if (child) Object.assign(child, linkedData);
+        else state.events.push(Object.assign({ id: uid(), created: Date.now(), parentId: ev.id }, linkedData));
+      } else if (child) {
+        state.events = state.events.filter(function (item) { return item.id !== child.id; });
+      }
+    }
+    save();
+  }
+  function updateEvent(id, data) {
+    var ev = state.events.find(function (item) { return item.id === id; });
+    if (ev) Object.assign(ev, data);
+    save();
+  }
+  function removeEvent(id) {
+    state.events = state.events.filter(function (e) { return e.id !== id && e.parentId !== id; });
+    if (ui.editingId === id) ui.editingId = null;
+    save();
+  }
+  function eventTitle(ev) {
+    return (ev.parentId ? '보강 · ' : ev.absent ? '결석 · ' : '') + ev.title;
+  }
+  function linkedInfo(ev) {
+    if (ev.parentId) {
+      var parent = state.events.find(function (item) { return item.id === ev.parentId; });
+      return parent ? '원래 수업 ' + parent.date + (parent.time ? ' ' + parent.time : '') : '';
+    }
+    if (!ev.absent) return '';
+    var child = state.events.find(function (item) { return item.parentId === ev.id; });
+    return child ? '보강 ' + child.date + (child.time ? ' ' + child.time : '') : '보강 미정';
+  }
+
+  /* ===== 모달 (시간표에서 기록) ===== */
+  var dlg = document.getElementById('dlg');
+  var dlgBody = document.getElementById('dlgBody');
+  function closeDialog() { if (dlg.open) dlg.close(); dlgBody.replaceChildren(); }
+  function openDialog(ev, existingId, fixedDate) {
+    var day = dayOf(ev.date);
+    var heading = existingId ? '일정 수정' : (day.label + ' (' + day.dow + ') ' + (ev.time ? ev.time.slice(0, 2) + '시' : '종일') + ' 일정 기록');
+    var form = eventForm(ev, {
+      fixedDate: fixedDate,
+      onSave: function (data, makeup) {
+        saveEvent(data, existingId, makeup);
+        closeDialog(); render();
+      },
+      onCancel: closeDialog,
+      onDelete: existingId ? function () { removeEvent(existingId); closeDialog(); render(); } : null
+    });
+    var linkedText = linkedInfo(ev);
+    dlgBody.replaceChildren(h('h3', null, heading),
+      linkedText ? h('p', { class: 'panel-desc' }, linkedText) : null,
+      safeLink(ev.source) ? h('a', { class: 'notice-link', href: safeLink(ev.source), target: '_blank', rel: 'noopener noreferrer' }, '공지 원문 열기') : null,
+      form);
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    form._focus();
+  }
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) closeDialog(); });
+  dlg.addEventListener('cancel', function () { dlgBody.replaceChildren(); });
+
+  /* ===== 주간 시간표 ===== */
+  var tt = document.getElementById('tt');
+  function timeRange(hr) {
+    return pad(hr) + '–' + pad(hr + 2);
+  }
+  function timeBucket(time) {
+    if (!time) return 'all';
+    var hour = Number(time.slice(0, 2));
+    return hour < 6 ? 'early' : String(hour - hour % 2);
+  }
+  function buildTable() {
+    var colgroup = h('colgroup', null, h('col', { class: 'c-time' }), WEEK.map(function () { return h('col'); }));
+    var thead = h('thead', null, h('tr', null,
+      h('th', { class: 'time', scope: 'col' }, ''),
+      WEEK.map(function (d) {
+        return h('th', { scope: 'col', class: d.cls }, h('span', { class: 'dow' }, d.dow), h('span', { class: 'dt' }, d.label));
+      })
+    ));
+    thead.append(h('tr', { class: 'allday' },
+      h('th', { class: 'time', scope: 'row' }, '종일'),
+      WEEK.map(function (d) { return slot(d, 'all'); })
+    ));
+    var rows = [h('tr', { class: 'deadline-calendar-row', hidden: true },
+      h('th', { class: 'time', scope: 'row' }, '마감'),
+      WEEK.map(function (d) {
+        return h('td', { class: 'deadline-cell', 'data-deadline-date': d.iso },
+          h('ul', { class: 'deadline-cues', 'aria-label': '마감 예고' }));
+      })
+    )];
+    rows.push(h('tr', { class: 'early-hours', hidden: true },
+      h('th', { class: 'time', scope: 'row' }, '00–06'),
+      WEEK.map(function (d) { return slot(d, 'early'); })
+    ));
+    for (var hr = 6; hr < 24; hr += 2) {
+      rows.push(h('tr', null,
+        h('th', { class: 'time', scope: 'row' }, timeRange(hr)),
+        WEEK.map(function (d) { return slot(d, hr); })
+      ));
+    }
+    tt.replaceChildren(colgroup, thead, h('tbody', null, rows));
+    function slot(d, hr) {
+      var label = d.label + ' ' + d.dow + '요일 ' + (hr === 'all' ? '종일' : hr === 'early' ? '00–06시' : timeRange(hr) + '시');
+      return h('td', { class: 'slot', tabindex: 0, 'data-date': d.iso, 'data-hour': String(hr), 'aria-label': label + ' 일정 기록' });
+    }
+  }
+
+  function slotIsFull(date, bucket) {
+    return state.events.filter(function (ev) {
+      return ev.date === date && timeBucket(ev.time) === bucket;
+    }).length >= 2;
+  }
+
+  var drag = null;
+  var suppressClick = false;
+  var moveStatus = document.getElementById('moveStatus');
+  tt.addEventListener('pointerdown', function (e) {
+    if (!e.isPrimary || e.button !== 0) return;
+    suppressClick = false;
+    var chip = e.target.closest('.chip');
+    if (!chip) return;
+    drag = { chip: chip, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+  document.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    if (!drag.preview) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+      drag.chip.setPointerCapture(e.pointerId);
+      drag.preview = drag.chip.cloneNode(true);
+      drag.preview.classList.add('drag-preview');
+      drag.preview.setAttribute('aria-hidden', 'true');
+      drag.preview.tabIndex = -1;
+      drag.preview.style.width = drag.chip.offsetWidth + 'px';
+      document.body.append(drag.preview);
+      moveStatus.textContent = '';
+    }
+    drag.preview.style.left = (e.clientX + 8) + 'px';
+    drag.preview.style.top = (e.clientY + 8) + 'px';
+    if (drag.target) drag.target.classList.remove('drop-target');
+    drag.target = dropSlot(e);
+    if (drag.target) drag.target.classList.add('drop-target');
+  });
+  function dropSlot(e) {
+    var hit = document.elementFromPoint(e.clientX, e.clientY);
+    var target = hit && hit.closest('td.slot');
+    return target && tt.contains(target) ? target : null;
+  }
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    var ended = drag;
+    drag = null;
+    if (!ended.preview) return;
+    suppressClick = true;
+    ended.preview.remove();
+    if (ended.target) ended.target.classList.remove('drop-target');
+    if (e.type !== 'pointerup') return;
+
+    var target = dropSlot(e);
+    if (!target || target === ended.chip.closest('td.slot')) return;
+    var ev = state.events.find(function (item) { return item.id === ended.chip.dataset.id; });
+    if (!ev) return;
+    var date = target.dataset.date;
+    var bucket = target.dataset.hour;
+    if (ev.parentId && bucket === 'all') {
+      moveStatus.textContent = '보강 일정은 시작 시각이 있는 칸에 놓아 주세요.';
+      return;
+    }
+    if (slotIsFull(date, bucket)) {
+      moveStatus.textContent = '이 칸에는 일정이 두 개 이상 있어 옮길 수 없습니다.';
+      return;
+    }
+    var time = ev.time;
+    if (bucket !== timeBucket(time)) {
+      var keepOffset = time && timeBucket(time) !== 'early' && bucket !== 'early';
+      var offset = keepOffset ? Number(time.slice(0, 2)) % 2 : 0;
+      var minutes = keepOffset ? time.slice(3) : '00';
+      time = bucket === 'all' ? null : pad(bucket === 'early' ? 0 : Number(bucket) + offset) + ':' + minutes;
+    }
+    updateEvent(ev.id, { date: date, time: time });
+    render();
+  }
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+
+  tt.addEventListener('click', function (e) {
+    if (suppressClick && e.detail) { suppressClick = false; return; }
+    var more = e.target.closest('.slot-more');
+    if (more) {
+      document.getElementById('day-' + more.closest('td.slot').dataset.date).scrollIntoView();
+      return;
+    }
+    var chip = e.target.closest('.chip');
+    if (chip) {
+      var ev = state.events.filter(function (x) { return x.id === chip.dataset.id; })[0];
+      if (ev) openDialog(ev, ev.id);
+      return;
+    }
+    var td = e.target.closest('td.slot');
+    if (td) openNewFromSlot(td);
+  });
+  tt.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('td.slot')) {
+      e.preventDefault(); openNewFromSlot(e.target);
+    }
+  });
+  function openNewFromSlot(td) {
+    var hr = td.dataset.hour;
+    openDialog({ date: td.dataset.date, time: hr === 'all' ? null : hr === 'early' ? '00:00' : pad(+hr) + ':00', title: '', memo: '', cat: 'personal' }, null);
+  }
+
+  function renderTimetable() {
+    tt.querySelector('.early-hours').hidden = !state.events.some(function (ev) {
+      return ev.date >= WEEK[0].iso && ev.date <= WEEK[6].iso && timeBucket(ev.time) === 'early';
+    });
+    var bySlot = new Map();
+    sortEvents(state.events).forEach(function (ev) {
+      var key = ev.date + '/' + timeBucket(ev.time);
+      if (!bySlot.has(key)) bySlot.set(key, []);
+      bySlot.get(key).push(ev);
+    });
+    tt.querySelectorAll('td.slot').forEach(function (td) {
+      td.replaceChildren();
+      var events = bySlot.get(td.dataset.date + '/' + td.dataset.hour);
+      if (!events) return;
+      var chips = events.slice(0, 2).map(function (ev) {
+        var full = (ev.time ? ev.time + ' ' : '종일 ') + eventTitle(ev);
+        return h('button', { type: 'button', class: 'chip ' + catOf(ev), 'data-id': ev.id, title: full, 'aria-label': full + ' 수정' },
+          ev.time ? h('span', { class: 'min' }, ev.time) : null, eventTitle(ev));
+      });
+      td.append(h('div', { class: 'slot-events' }, chips));
+      if (events.length > 2) {
+        td.append(h('button', { type: 'button', class: 'slot-more', 'aria-label': '요일별 일정에서 나머지 일정 보기' }, '+' + (events.length - 2)));
+      }
+    });
+  }
+
+  /* ===== 요일별 일정 ===== */
+  var daysEl = document.getElementById('days');
+  function renderDays() {
+    daysEl.replaceChildren.apply(daysEl, WEEK.map(function (d) {
+      var list = eventsOn(d.iso);
+      var items = list.map(function (ev) {
+        if (ui.editingId === ev.id) {
+          return h('li', { class: 'ev editing' }, eventForm(ev, {
+            onSave: function (data, makeup) { saveEvent(data, ev.id, makeup); ui.editingId = null; render(); },
+            onCancel: function () { ui.editingId = null; render(); },
+            onDelete: function () { removeEvent(ev.id); render(); }
+          }));
+        }
+        return h('li', { class: 'ev ' + catOf(ev) },
+          h('div', { class: 'ev-top' },
+            ev.time ? h('span', { class: 'ev-time' }, ev.time) : h('span', { class: 'ev-time allday' }, '종일'),
+            h('span', { class: 'ev-title' }, eventTitle(ev)),
+            h('span', { class: 'ev-cat' }, h('i', { class: 'dot ' + catOf(ev) }), ' ', CATS[catOf(ev)])
+          ),
+          ev.memo ? h('p', { class: 'ev-memo' }, ev.memo) : null,
+          linkedInfo(ev) ? h('p', { class: 'panel-desc' }, linkedInfo(ev)) : null,
+          safeLink(ev.source) ? h('a', { class: 'notice-link', href: safeLink(ev.source), target: '_blank', rel: 'noopener noreferrer' }, '공지 원문 열기') : null,
+          h('div', { class: 'ev-actions' },
+            h('button', { type: 'button', class: 'btn small', onclick: function () { ui.editingId = ev.id; ui.addingDate = null; render(); focusEditing(); } }, '수정 · 메모'),
+            deleteButton('삭제', function () { removeEvent(ev.id); render(); }, true)
+          )
+        );
+      });
+      if (ui.addingDate === d.iso) {
+        items.push(h('li', { class: 'ev editing' }, eventForm({ date: d.iso, time: '', title: '', memo: '', cat: 'personal' }, {
+          fixedDate: true,
+          onSave: function (data, makeup) { saveEvent(data, null, makeup); ui.addingDate = null; render(); },
+          onCancel: function () { ui.addingDate = null; render(); }
+        })));
+      }
+      return h('section', { class: 'day', id: 'day-' + d.iso },
+        h('div', { class: 'day-head' },
+          h('h3', { class: d.cls }, d.label + ' ' + d.dow + '요일', list.length ? h('span', { class: 'count' }, list.length + '건') : null),
+          h('button', { type: 'button', class: 'btn small', onclick: function () { ui.addingDate = d.iso; ui.editingId = null; render(); focusEditing(); } }, '+ 일정 추가')
+        ),
+        h('ul', { class: 'deadline-cues', hidden: true, 'aria-label': '마감 예고' }),
+        items.length ? h('ul', { class: 'evlist' }, items) : h('p', { class: 'empty' }, '등록된 일반 일정이 없습니다.')
+      );
+    }));
+    renderDeadlineCalendar();
+  }
+  function focusEditing() {
+    var f = daysEl.querySelector('li.editing form');
+    if (f && f._focus) f._focus();
+  }
+
+  /* ===== 해야 할 일 ===== */
+  var todosEl = document.getElementById('todos');
+  document.getElementById('todoAdd').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var inp = document.getElementById('todoInput');
+    var text = inp.value.trim();
+    if (!text) { inp.focus(); return; }
+    state.todos.push({ id: uid(), text: text, done: false });
+    save();
+    inp.value = '';
+    renderTodos();
+    inp.focus();
+  });
+  function renderTodos() {
+    todosEl.replaceChildren.apply(todosEl, state.todos.map(function (t) {
+      if (ui.todoEditingId === t.id) {
+        var inp = h('input', { type: 'text', class: 'todo-edit', value: t.text, maxlength: 200, 'aria-label': '할 일 수정' });
+        var f = h('form', { class: 'todo-edit', style: 'display:flex;gap:6px;flex:1;flex-wrap:wrap' },
+          inp,
+          h('span', { class: 'acts' },
+            h('button', { type: 'button', class: 'btn small', onclick: function () { ui.todoEditingId = null; renderTodos(); } }, '취소'),
+            h('button', { type: 'submit', class: 'btn small primary' }, '저장'))
+        );
+        f.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var v = inp.value.trim();
+          if (!v) { inp.focus(); return; }
+          t.text = v; ui.todoEditingId = null; save(); renderTodos();
+        });
+        setTimeout(function () { inp.focus(); }, 0);
+        return h('li', { class: 'todo' + (t.done ? ' done' : '') }, f);
+      }
+      return h('li', { class: 'todo' + (t.done ? ' done' : '') },
+        h('input', { type: 'checkbox', checked: !!t.done, 'aria-label': t.text + ' 완료',
+          onchange: function (e) { t.done = e.target.checked; save(); renderTodos(); } }),
+        h('span', { class: 'todo-text' }, t.text),
+        h('span', { class: 'acts' },
+          h('button', { type: 'button', class: 'btn small', onclick: function () { ui.todoEditingId = t.id; renderTodos(); } }, '수정'),
+          deleteButton('삭제', function () {
+            state.todos = state.todos.filter(function (x) { return x.id !== t.id; });
+            save(); renderTodos();
+          }, true)
+        )
+      );
+    }));
+    var done = state.todos.filter(function (t) { return t.done; }).length;
+    document.getElementById('todoSummary').textContent =
+      state.todos.length ? '전체 ' + state.todos.length + '개 · 완료 ' + done + '개' : '아직 적어 둔 일이 없습니다.';
+  }
+
+  /* ===== 마감 ===== */
+  var deadlineForm = document.getElementById('deadlineForm');
+  var cancelDeadline = document.getElementById('cancelDeadline');
+  var deadlineId = null;
+  function resetDeadlineForm() {
+    deadlineId = null;
+    deadlineForm.reset();
+    cancelDeadline.hidden = true;
+  }
+  cancelDeadline.addEventListener('click', resetDeadlineForm);
+  deadlineForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = deadlineForm.elements.title.value.trim();
+    var date = deadlineForm.elements.date.value;
+    if (!title || !validDate(date)) return;
+    var data = { title: title, date: date, lead: Number(deadlineForm.elements.lead.value) };
+    var existing = state.deadlines.find(function (d) { return d.id === deadlineId; });
+    if (existing) Object.assign(existing, data);
+    else state.deadlines.push(Object.assign({ id: uid(), done: false }, data));
+    save();
+    resetDeadlineForm();
+    renderDeadlines();
+  });
+  function daysUntil(date, today) {
+    return (Date.parse(date) - Date.parse(today)) / 86400000;
+  }
+  function sortedDeadlines() {
+    return state.deadlines.slice().sort(function (a, b) { return a.date.localeCompare(b.date); });
+  }
+  function deadlinesOn(date, deadlines) {
+    return deadlines.filter(function (d) {
+      var remaining = daysUntil(d.date, date);
+      return remaining >= 0 && remaining <= d.lead;
+    });
+  }
+  function deadlineLabel(d, date) {
+    var remaining = daysUntil(d.date, date);
+    return remaining ? 'D-' + remaining : 'D-day';
+  }
+  function renderDeadlineCalendar() {
+    var deadlines = sortedDeadlines();
+    var anyVisible = false;
+    WEEK.forEach(function (day) {
+      var visible = deadlinesOn(day.iso, deadlines);
+      var weekList = tt.querySelector('[data-deadline-date="' + day.iso + '"] .deadline-cues');
+      var dayList = document.getElementById('day-' + day.iso).querySelector('.deadline-cues');
+      anyVisible = anyVisible || visible.length > 0;
+      [weekList, dayList].forEach(function (list) {
+        list.hidden = !visible.length;
+        list.replaceChildren.apply(list, visible.map(function (d) {
+          return h('li', { class: 'deadline-cue' },
+            h('strong', null, deadlineLabel(d, day.iso)), ' · ' + d.title + (d.done ? ' · 완료' : ''));
+        }));
+      });
+    });
+    tt.querySelector('.deadline-calendar-row').hidden = !anyVisible;
+  }
+  function deadlineCheckbox(d) {
+    return h('input', { type: 'checkbox', checked: !!d.done, 'aria-label': d.title + ' 완료',
+      onchange: function (e) { d.done = e.target.checked; save(); renderDeadlines(); } });
+  }
+  function renderDeadlines() {
+    var now = todayIso();
+    var deadlines = sortedDeadlines();
+    var active = deadlinesOn(now, deadlines);
+    document.getElementById('activeDeadlines').replaceChildren.apply(document.getElementById('activeDeadlines'),
+      active.length ? active.map(function (d) {
+        return h('li', { class: 'deadline-row' },
+          h('span', null, deadlineLabel(d, now) + ' · ' + d.title + ' · ' + d.date.slice(5).replace('-', '/')),
+          d.done ? h('strong', null, '완료') : null,
+          deadlineCheckbox(d));
+      }) : [h('li', { class: 'empty' }, '표시 기간에 들어온 마감이 없습니다.')]);
+    var all = document.getElementById('allDeadlines');
+    all.replaceChildren.apply(all, deadlines.map(function (d) {
+      return h('li', { class: 'deadline-row' },
+        h('span', null, d.date + ' · ' + d.title + (d.done ? ' · 완료' : ' · ' + d.lead + '일 전부터')),
+        deadlineCheckbox(d),
+        h('button', { type: 'button', class: 'btn small', onclick: function () {
+          deadlineId = d.id;
+          deadlineForm.elements.title.value = d.title;
+          deadlineForm.elements.date.value = d.date;
+          deadlineForm.elements.lead.value = String(d.lead);
+          cancelDeadline.hidden = false;
+          deadlineForm.elements.title.focus();
+        } }, '수정'),
+        deleteButton('삭제', function () {
+          state.deadlines = state.deadlines.filter(function (item) { return item.id !== d.id; });
+          if (deadlineId === d.id) resetDeadlineForm();
+          save(); renderDeadlines();
+        }, true));
+    }));
+    renderDeadlineCalendar();
+  }
+
+  /* ===== 오늘과 주간 보기 ===== */
+  var weekPanels = document.getElementById('weekPanels');
+  var toggleWeek = document.getElementById('toggleWeek');
+  var jumpWeek = document.getElementById('jumpWeek');
+  toggleWeek.addEventListener('click', function () {
+    weekPanels.hidden = !weekPanels.hidden;
+    toggleWeek.setAttribute('aria-expanded', String(!weekPanels.hidden));
+    toggleWeek.textContent = weekPanels.hidden ? '주간 시간표 열기' : '주간 시간표 접기';
+  });
+  function showWeek(date) {
+    WEEK = weekOf(date);
+    jumpWeek.value = date;
+    ui.addingDate = null;
+    ui.editingId = null;
+    document.getElementById('moveStatus').textContent = '';
+    document.getElementById('weekRange').textContent = WEEK[0].iso + ' (월) – ' + WEEK[6].iso + ' (일)';
+    buildTable();
+    renderTimetable();
+    renderDays();
+  }
+  document.getElementById('prevWeek').addEventListener('click', function () { showWeek(shiftDate(WEEK[0].iso, -7)); });
+  document.getElementById('nextWeek').addEventListener('click', function () { showWeek(shiftDate(WEEK[0].iso, 7)); });
+  document.getElementById('thisWeek').addEventListener('click', function () { showWeek(todayIso()); });
+  jumpWeek.addEventListener('change', function () { if (validDate(jumpWeek.value)) showWeek(jumpWeek.value); });
+  document.getElementById('addToday').addEventListener('click', function () {
+    openDialog({ date: todayIso(), time: null, title: '', cat: 'personal' }, null, true);
+  });
+  function renderToday() {
+    var date = todayIso();
+    var day = dayOf(date);
+    document.getElementById('range').textContent = date;
+    document.getElementById('todayDate').textContent = day.label + ' ' + day.dow + '요일';
+    var list = document.getElementById('todayEvents');
+    var events = eventsOn(date);
+    list.replaceChildren.apply(list, events.length ? events.map(function (ev) {
+      return h('li', { class: 'ev ' + catOf(ev) },
+        h('div', { class: 'ev-top' },
+          h('span', { class: 'ev-time' }, ev.time || '종일'),
+          h('button', { type: 'button', class: 'btn small', onclick: function () { openDialog(ev, ev.id); } }, eventTitle(ev)),
+          h('span', { class: 'ev-cat' }, CATS[catOf(ev)])));
+    }) : [h('li', { class: 'empty' }, '오늘 등록된 일정이 없습니다.')]);
+  }
+  function render() { renderToday(); renderTimetable(); renderDays(); renderTodos(); }
+  showWeek(todayIso());
+  renderToday();
+  renderTodos();
+  renderDeadlines();
+  var displayedDate = todayIso();
+  setInterval(function () {
+    var now = todayIso();
+    if (now === displayedDate) return;
+    displayedDate = now;
+    renderToday();
+    renderDeadlines();
+  }, 60000);
+})();
+</script>
+</body>
+</html>
